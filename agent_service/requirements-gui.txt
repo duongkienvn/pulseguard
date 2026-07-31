@@ -1,0 +1,4 @@
+# Requirements for GUI Agent
+psutil>=5.9.0
+requests>=2.28.0
+pyinstaller>=6.0.0
