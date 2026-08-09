@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+aiokafka
+influxdb-client
+python-dotenv
+httpx
