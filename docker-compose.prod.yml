@@ -1,0 +1,56 @@
+# Production overrides for docker-compose
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    ports: []  # Don't expose in production
+
+  influxdb:
+    ports: []  # Don't expose in production
+
+  auth-service:
+    ports: []  # Only accessible via frontend proxy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-statusmonitor}:${POSTGRES_PASSWORD:-statusmonitor}@postgres:5432/${POSTGRES_DB:-statusmonitor}
+      - SECRET_KEY=${SECRET_KEY}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+
+  ingestion-service:
+    ports:
+      - "8001:8001"  # Keep exposed for external agents
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - AUTH_SERVICE_URL=http://auth-service:8000
+      - CORS_ORIGINS=${CORS_ORIGINS}
+
+  distribution-service:
+    ports: []  # Only accessible via frontend proxy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - AUTH_SERVICE_URL=http://auth-service:8000
+      - CORS_ORIGINS=${CORS_ORIGINS}
+
+  history-service:
+    ports: []  # Only accessible via frontend proxy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - INFLUXDB_ORG=${INFLUXDB_ORG:-statusmonitor}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-metrics}
+      - AUTH_SERVICE_URL=http://auth-service:8000
+      - CORS_ORIGINS=${CORS_ORIGINS}
+
+  alert-service:
+    ports: []  # Only accessible via frontend proxy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-statusmonitor}:${POSTGRES_PASSWORD:-statusmonitor}@postgres:5432/${POSTGRES_DB:-statusmonitor}
+      - AUTH_SERVICE_URL=http://auth-service:8000
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+
+  frontend:
+    ports:
+      - "80:80"
+      - "443:443"
