@@ -20,7 +20,7 @@ def main():
     if not AGENT_TOKEN:
         print("ERROR: AGENT_TOKEN environment variable is required!")
         print("Please set your agent token in a .env file or environment variable.")
-        print("You can get a token from the StatusMonitor web interface.")
+        print("You can get a token from the PulseGuard web interface.")
         sys.exit(1)
     
     print(f"Starting Agent...")

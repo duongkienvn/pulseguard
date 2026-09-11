@@ -55,7 +55,7 @@ const Dashboard = () => {
                     <div className="flex justify-between h-16">
                         <div className="flex items-center">
                             <Activity className="h-8 w-8 text-indigo-600" />
-                            <span className="ml-2 text-xl font-bold text-gray-900">StatusMonitor</span>
+                            <span className="ml-2 text-xl font-bold text-gray-900">PulseGuard</span>
                         </div>
                         <div className="flex items-center">
                             <span className="mr-4 text-gray-700">Welcome, {user?.username}</span>

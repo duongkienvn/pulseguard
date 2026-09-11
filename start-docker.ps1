@@ -1,5 +1,5 @@
-# StatusMonitor Docker Startup Script
-# This script builds and starts all StatusMonitor services using Docker Compose
+# PulseGuard Docker Startup Script
+# This script builds and starts all PulseGuard services using Docker Compose
 #
 # Usage:
 #   .\start-docker.ps1           # Development mode (all ports exposed)
@@ -14,7 +14,7 @@ param(
 $mode = if ($Prod) { "Production" } else { "Development" }
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  StatusMonitor - Docker Startup" -ForegroundColor Cyan
+Write-Host "  PulseGuard - Docker Startup" -ForegroundColor Cyan
 Write-Host "  Mode: $mode" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""

@@ -1,5 +1,5 @@
 """
-Status Monitor Agent - GUI Application
+PulseGuard Agent - GUI Application
 A standalone desktop application for monitoring system metrics.
 Includes Platform-Agnostic Real-Time CPU Frequency Monitoring.
 """
@@ -241,7 +241,7 @@ class AgentGUI:
     
     def __init__(self, root):
         self.root = root
-        self.root.title("Status Monitor Agent")
+        self.root.title("PulseGuard Agent")
         self.root.geometry("500x600")
         self.root.resizable(False, False)
         
@@ -287,7 +287,7 @@ class AgentGUI:
         
         ttk.Label(
             header_frame, 
-            text="Status Monitor Agent", 
+            text="PulseGuard Agent",
             font=("Segoe UI", 16, "bold")
         ).pack()
         
@@ -440,7 +440,7 @@ class AgentGUI:
         info_frame = ttk.LabelFrame(self.settings_frame, text="How to get a token")
         info_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
         
-        info_text = """1. Log in to the Status Monitor web dashboard
+        info_text = """1. Log in to the PulseGuard web dashboard
 2. Go to 'Agents' page
 3. Click 'Add New Agent' and enter a name
 4. Copy the generated token and paste it above

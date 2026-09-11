@@ -1,4 +1,4 @@
-# Build script for Status Monitor Agent GUI
+# Build script for PulseGuard Agent GUI
 # Run this script to create a standalone executable
 
 # Activate virtual environment if exists
@@ -16,7 +16,7 @@ Write-Host "Building executable..." -ForegroundColor Cyan
 $pyinstallerArgs = @(
     "--onefile",
     "--windowed",
-    "--name", "StatusMonitorAgent",
+    "--name", "PulseGuardAgent",
     "agent_service/gui_agent.py"
 )
 
@@ -30,4 +30,4 @@ pyinstaller @pyinstallerArgs
 
 Write-Host ""
 Write-Host "Build complete!" -ForegroundColor Green
-Write-Host "Executable is located at: dist/StatusMonitorAgent.exe" -ForegroundColor Yellow
+Write-Host "Executable is located at: dist/PulseGuardAgent.exe" -ForegroundColor Yellow

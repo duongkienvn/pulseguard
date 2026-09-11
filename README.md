@@ -1,4 +1,4 @@
-# StatusMonitor
+# PulseGuard
 
 <p align="center">
   <strong>Real-time system monitoring with a modern web dashboard and cross-platform agent</strong>
@@ -35,7 +35,7 @@
 
 ## Overview
 
-StatusMonitor is a comprehensive system monitoring solution that collects, stores, and visualizes real-time metrics from multiple machines. It features a modern React dashboard with interactive charts, WebSocket-based live updates, and historical data analysis powered by Apache Kafka for reliable event streaming.
+PulseGuard is a comprehensive system monitoring solution that collects, stores, and visualizes real-time metrics from multiple machines. It features a modern React dashboard with interactive charts, WebSocket-based live updates, and historical data analysis powered by Apache Kafka for reliable event streaming.
 
 <p align="center">
   <img src="screenshots/HomePage.png" alt="Home Page" width="80%">
@@ -377,7 +377,7 @@ python agent_service/main.py
 
 ```powershell
 .\build_agent.ps1
-# Output: dist/StatusMonitorAgent.exe
+# Output: dist/PulseGuardAgent.exe
 ```
 
 ---

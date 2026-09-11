@@ -174,7 +174,7 @@ const Agents = () => {
                         <div className="flex items-center">
                             <Link to="/agents" className="flex items-center">
                                 <Activity className="h-8 w-8 text-indigo-600" />
-                                <span className="ml-2 text-xl font-bold text-gray-900">StatusMonitor</span>
+                                <span className="ml-2 text-xl font-bold text-gray-900">PulseGuard</span>
                             </Link>
                             <div className="ml-10 flex items-baseline space-x-4">
                                 <Link to="/agents" className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Agents</Link>

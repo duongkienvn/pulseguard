@@ -1,5 +1,5 @@
-# StatusMonitor Docker Shutdown Script
-# This script stops all StatusMonitor services
+# PulseGuard Docker Shutdown Script
+# This script stops all PulseGuard services
 #
 # Usage:
 #   .\stop-docker.ps1          # Stop services (keep data)
@@ -10,7 +10,7 @@ param(
 )
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  StatusMonitor - Docker Shutdown" -ForegroundColor Cyan
+Write-Host "  PulseGuard - Docker Shutdown" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
