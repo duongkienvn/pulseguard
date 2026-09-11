@@ -5,17 +5,21 @@ from datetime import timedelta, datetime, timezone
 from jose import JWTError, jwt
 from typing import List
 import secrets
+import logging
 import models, schemas, auth, database
 
-database.Base.metadata.create_all(bind=database.engine)
-
 import os
+import redis
+from redis.exceptions import RedisError
 
 app = FastAPI()
 
 from fastapi.middleware.cors import CORSMiddleware
 
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174").split(",")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+logger = logging.getLogger(__name__)
+redis_client = None
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,6 +37,22 @@ def get_db():
         db.close()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def get_redis_client():
+    global redis_client
+    if redis_client is None:
+        redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+    return redis_client
+
+def invalidate_agent_token_cache(*tokens: str):
+    """Best-effort invalidation for ingestion-service token validation cache."""
+    cache_keys = [f"token_cache:{token}" for token in tokens if token]
+    if not cache_keys:
+        return
+    try:
+        get_redis_client().delete(*cache_keys)
+    except RedisError as exc:
+        logger.warning("Failed to invalidate agent token cache: %s", exc)
 
 @app.post("/register", response_model=schemas.User)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -77,14 +97,14 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 @app.post("/refresh", response_model=schemas.Token)
-def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
+def refresh_token(token_request: schemas.RefreshTokenRequest, db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(refresh_token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+        payload = jwt.decode(token_request.refresh_token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
         username: str = payload.get("sub")
         token_type: str = payload.get("type")
         jti: str = payload.get("jti")
@@ -135,9 +155,9 @@ def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
     return {"access_token": access_token, "refresh_token": new_refresh_token, "token_type": "bearer"}
 
 @app.post("/logout")
-def logout(refresh_token: str, db: Session = Depends(get_db)):
+def logout(token_request: schemas.RefreshTokenRequest, db: Session = Depends(get_db)):
     try:
-        payload = jwt.decode(refresh_token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+        payload = jwt.decode(token_request.refresh_token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
         jti: str = payload.get("jti")
         if jti:
             db_token = db.query(models.RefreshToken).filter(models.RefreshToken.jti == jti).first()
@@ -146,7 +166,7 @@ def logout(refresh_token: str, db: Session = Depends(get_db)):
                 db.add(db_token)
                 db.commit()
     except JWTError:
-        pass # Ignore invalid tokens on logout
+        logger.info("Ignoring invalid refresh token during logout")
     return {"message": "Logged out successfully"}
 
 @app.get("/users/me", response_model=schemas.User)
@@ -212,6 +232,7 @@ async def create_agent(
     db.add(db_agent)
     db.commit()
     db.refresh(db_agent)
+    invalidate_agent_token_cache(agent_token)
     return db_agent
 
 @app.get("/agents", response_model=List[schemas.AgentListResponse])
@@ -259,8 +280,10 @@ async def delete_agent(
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     
+    old_token = agent.token
     agent.is_active = False
     db.commit()
+    invalidate_agent_token_cache(old_token)
     return {"message": "Agent deleted successfully"}
 
 @app.post("/agents/{agent_id}/regenerate-token", response_model=schemas.AgentResponse)
@@ -278,11 +301,13 @@ async def regenerate_agent_token(
         raise HTTPException(status_code=404, detail="Agent not found")
     
     now = datetime.now(timezone.utc)
+    old_token = agent.token
     agent.token = secrets.token_hex(32)
     agent.token_expires_at = now + timedelta(minutes=5)  # Reset 5-minute timer
     agent.token_activated = False  # Reset activation status
     db.commit()
     db.refresh(agent)
+    invalidate_agent_token_cache(old_token, agent.token)
     return agent
 
 # Endpoint for validating agent tokens (used by ingestion service)
@@ -326,7 +351,10 @@ async def validate_agent_token(token: str, db: Session = Depends(get_db)):
     )
 
 @app.delete("/admin/cleanup-tokens")
-async def cleanup_expired_tokens(db: Session = Depends(get_db)):
+async def cleanup_expired_tokens(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Clean up expired and revoked refresh tokens.
     
     This endpoint should be called periodically (e.g., via cron job) to prevent

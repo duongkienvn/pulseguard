@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { Activity, Plus, Trash2, Copy, RefreshCw, Eye, EyeOff, Monitor, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
-import axios from 'axios';
+import { Activity, Plus, Trash2, Copy, RefreshCw, Monitor, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { authApi } from '../api';
 
 const Agents = () => {
     const { user, logout, tokens } = useAuth();
@@ -11,13 +11,12 @@ const Agents = () => {
     const [showNewAgentForm, setShowNewAgentForm] = useState(false);
     const [newAgentName, setNewAgentName] = useState('');
     const [createdAgent, setCreatedAgent] = useState(null);
-    const [visibleTokens, setVisibleTokens] = useState({});
     const [error, setError] = useState('');
     const [tokenTimeRemaining, setTokenTimeRemaining] = useState(null);
 
     const fetchAgents = useCallback(async () => {
         try {
-            const response = await axios.get('http://localhost:8000/agents', {
+            const response = await authApi.get('/agents', {
                 headers: { Authorization: `Bearer ${tokens.access_token}` }
             });
             setAgents(response.data);
@@ -93,8 +92,8 @@ const Agents = () => {
         if (!newAgentName.trim()) return;
 
         try {
-            const response = await axios.post(
-                'http://localhost:8000/agents',
+            const response = await authApi.post(
+                '/agents',
                 { name: newAgentName },
                 { headers: { Authorization: `Bearer ${tokens.access_token}` } }
             );
@@ -118,7 +117,7 @@ const Agents = () => {
         if (!confirm('Are you sure you want to delete this agent?')) return;
 
         try {
-            await axios.delete(`http://localhost:8000/agents/${agentId}`, {
+            await authApi.delete(`/agents/${agentId}`, {
                 headers: { Authorization: `Bearer ${tokens.access_token}` }
             });
             fetchAgents();
@@ -132,8 +131,8 @@ const Agents = () => {
         if (!confirm('Are you sure you want to regenerate the token? The old token will stop working.')) return;
 
         try {
-            const response = await axios.post(
-                `http://localhost:8000/agents/${agentId}/regenerate-token`,
+            const response = await authApi.post(
+                `/agents/${agentId}/regenerate-token`,
                 {},
                 { headers: { Authorization: `Bearer ${tokens.access_token}` } }
             );
@@ -148,13 +147,6 @@ const Agents = () => {
 
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text);
-    };
-
-    const toggleTokenVisibility = (agentId) => {
-        setVisibleTokens(prev => ({
-            ...prev,
-            [agentId]: !prev[agentId]
-        }));
     };
 
     const formatDate = (dateString) => {

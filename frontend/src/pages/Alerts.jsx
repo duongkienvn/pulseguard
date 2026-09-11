@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Activity, Bell, Trash2, Plus, Save, AlertTriangle, History, Filter, RefreshCw } from 'lucide-react';
 import axios from 'axios';
+import { authApi } from '../api';
 
 const Alerts = () => {
     const { user, logout, tokens } = useAuth();
@@ -38,7 +39,7 @@ const Alerts = () => {
             
             const [rulesRes, agentsRes, recipientRes] = await Promise.all([
                 axios.get('/api/alerts/rules', { headers }),
-                axios.get('http://localhost:8000/agents', { headers }),
+                authApi.get('/agents', { headers }),
                 axios.get('/api/alerts/recipient', { headers })
             ]);
 

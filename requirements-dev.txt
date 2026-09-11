@@ -1,0 +1,6 @@
+pytest
+httpx
+-r auth_service/requirements.txt
+-r ingestion_service/requirements.txt
+-r distribution_service/requirements.txt
+-r alert_service/requirements.txt

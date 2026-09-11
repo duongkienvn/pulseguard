@@ -4,9 +4,11 @@ import asyncio
 import os
 import json
 import httpx
+import logging
 from typing import Dict, Set, Optional
 
 app = FastAPI()
+logger = logging.getLogger(__name__)
 
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8000")
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174").split(",")
@@ -39,8 +41,8 @@ async def validate_token(token: str) -> Optional[dict]:
             )
             if response.status_code == 200:
                 return response.json()
-    except Exception as e:
-        print(f"Token validation error: {e}")
+    except httpx.RequestError as e:
+        logger.warning("Token validation request failed: %s", e)
     return None
 
 class ConnectionManager:
@@ -59,27 +61,34 @@ class ConnectionManager:
         print(f"Client connected: user_id={user_id}, agent_id_filter={agent_id}")
 
     def disconnect(self, websocket: WebSocket):
-        if websocket in self.connection_info:
-            user_id, agent_id = self.connection_info[websocket]
-            if user_id in self.user_connections:
-                self.user_connections[user_id].discard((websocket, agent_id))
-                if not self.user_connections[user_id]:
-                    del self.user_connections[user_id]
-            del self.connection_info[websocket]
-            print(f"Client disconnected: user_id={user_id}")
+        info = self.connection_info.pop(websocket, None)
+        if not info:
+            return
+
+        user_id, agent_id = info
+        if user_id in self.user_connections:
+            self.user_connections[user_id].discard((websocket, agent_id))
+            if not self.user_connections[user_id]:
+                del self.user_connections[user_id]
+        print(f"Client disconnected: user_id={user_id}")
 
     async def send_to_user(self, user_id: int, message: str, agent_id: int):
         """Send message to all connections for a user, filtering by agent_id if specified"""
         if user_id not in self.user_connections:
             return
         
+        stale_connections = []
         for websocket, agent_id_filter in list(self.user_connections[user_id]):
             # Send if no filter, or if agent_id matches filter
             if agent_id_filter is None or agent_id_filter == agent_id:
                 try:
                     await websocket.send_text(message)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.warning("Dropping stale WebSocket connection after send failure: %s", exc)
+                    stale_connections.append(websocket)
+
+        for websocket in stale_connections:
+            self.disconnect(websocket)
 
     def get_subscribed_user_ids(self) -> Set[int]:
         """Get all user IDs that have active connections"""
@@ -123,8 +132,8 @@ async def kafka_consumer():
             if consumer:
                 try:
                     await consumer.stop()
-                except:
-                    pass
+                except Exception as exc:
+                    logger.warning("Error stopping Kafka consumer: %s", exc)
 
 @app.on_event("startup")
 async def startup_event():
@@ -155,7 +164,8 @@ async def websocket_endpoint(
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-    except Exception:
+    except Exception as exc:
+        logger.warning("WebSocket connection closed after unexpected error: %s", exc)
         manager.disconnect(websocket)
 
 @app.get("/health")

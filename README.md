@@ -332,6 +332,24 @@ Generate a secure secret key:
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
+### Database Migrations
+
+PostgreSQL schemas are managed with Alembic instead of automatic table creation at application startup.
+
+Auth service migrations:
+```bash
+cd auth_service
+alembic upgrade head
+```
+
+Alert service migrations:
+```bash
+cd alert_service
+alembic upgrade head
+```
+
+Docker containers run these migrations automatically before starting `auth-service` and `alert-service`. The two services share the same PostgreSQL database but use separate Alembic version tables (`auth_alembic_version` and `alert_alembic_version`) because each service owns separate tables.
+
 ---
 
 ## Agent Setup
@@ -372,11 +390,13 @@ python agent_service/main.py
 |----------|--------|-------------|
 | `/register` | POST | Create new user |
 | `/token` | POST | Login (returns JWT tokens) |
-| `/refresh` | POST | Refresh access token |
+| `/refresh` | POST | Refresh access token using JSON body `{ "refresh_token": "..." }` |
+| `/logout` | POST | Revoke refresh token using JSON body `{ "refresh_token": "..." }` |
 | `/users/me` | GET | Get current user info |
 | `/agents` | GET/POST | List or create agents |
 | `/agents/{id}` | DELETE | Delete an agent |
 | `/agents/{id}/regenerate-token` | POST | Regenerate agent token |
+| `/admin/cleanup-tokens` | DELETE | Clean expired/revoked refresh tokens (requires JWT) |
 
 ### Ingestion Service (`:8001`)
 
@@ -434,6 +454,12 @@ python agent_service/main.py
 | `INFLUXDB_TOKEN` | (required) | InfluxDB admin token |
 | `TELEGRAM_BOT_TOKEN` | (optional) | Telegram bot for alerts |
 | `CORS_ORIGINS` | localhost:5173 | Comma-separated allowed CORS origins |
+| `VITE_AUTH_API_BASE_URL` | /api/auth | Optional frontend auth API base URL override |
+| `COLLECTION_INTERVAL` | 5 | Headless agent metrics interval in seconds |
+
+### Frontend API Routing
+
+The React app calls auth through `/api/auth` by default so production does not need to expose `auth-service` publicly. Vite proxies `/api/auth`, `/api/history`, `/api/alerts`, and `/ws` during local development; nginx handles the same routes in Docker.
 
 ### InfluxDB Buckets
 

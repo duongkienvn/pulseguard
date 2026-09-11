@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
+import { authApi } from '../api';
 
 const AuthContext = createContext(null);
 
@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
         if (tokens) {
             localStorage.setItem('tokens', JSON.stringify(tokens));
             // Fetch user details
-            axios.get('http://localhost:8000/users/me', {
+            authApi.get('/users/me', {
                 headers: { Authorization: `Bearer ${tokens.access_token}` }
             })
                 .then(res => setUser(res.data))
@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
-            const res = await axios.post('http://localhost:8000/token',
+            const res = await authApi.post('/token',
                 new URLSearchParams({ username, password }),
                 { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
             );
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         if (tokens?.refresh_token) {
             try {
-                await axios.post(`http://localhost:8000/logout?refresh_token=${tokens.refresh_token}`);
+                await authApi.post('/logout', { refresh_token: tokens.refresh_token });
             } catch (e) {
                 console.error("Logout failed on server", e);
             }
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (username, password) => {
         try {
-            await axios.post('http://localhost:8000/register', { username, password });
+            await authApi.post('/register', { username, password });
             return true;
         } catch (error) {
             console.error("Registration failed", error);

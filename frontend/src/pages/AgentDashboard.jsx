@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { ArrowLeft, Activity, HardDrive, Cpu, Network, Clock, History, TrendingUp, AlertTriangle, CheckCircle, XCircle, X, Zap, ArrowUp, ArrowDown, Download } from 'lucide-react';
 import axios from 'axios';
+import { authApi } from '../api';
 
 const AgentDashboard = () => {
     const { user, tokens } = useAuth();
@@ -38,7 +39,7 @@ const AgentDashboard = () => {
     useEffect(() => {
         const fetchAgent = async () => {
             try {
-                const response = await axios.get(`http://localhost:8000/agents/${agentId}`, {
+                const response = await authApi.get(`/agents/${agentId}`, {
                     headers: { Authorization: `Bearer ${tokens.access_token}` }
                 });
                 setAgent(response.data);

@@ -43,9 +43,6 @@ dist/
 # Agent config (contains tokens)
 .statusmonitor/
 
-# Test files
-test_*.py
-
 # Logs
 *.log
 logs/

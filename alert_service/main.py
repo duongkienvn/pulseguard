@@ -9,13 +9,12 @@ import json
 import threading
 import os
 import time
+import logging
 from telegram_bot import send_telegram_message
 import requests
 
 app = FastAPI()
-
-# Create tables
-models.Base.metadata.create_all(bind=database.engine)
+logger = logging.getLogger(__name__)
 
 # Configuration
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
@@ -63,6 +62,7 @@ def get_current_user(authorization: Optional[str] = Header(None)):
         user_data["_authorization"] = authorization
         return user_data
     except requests.RequestException as e:
+        logger.warning("Authentication request failed: %s", e)
         raise HTTPException(status_code=401, detail="Authentication failed")
 
 def refresh_caches():
@@ -206,7 +206,7 @@ def kafka_listener():
                     data = message.value
                     check_metrics(data)
                 except Exception as e:
-                    pass  # Silently ignore malformed messages
+                    logger.warning("Error processing alert metric message: %s", e)
         except Exception as e:
             print(f"Kafka consumer error: {e}. Reconnecting in {backoff} seconds...")
             time.sleep(backoff)
@@ -215,8 +215,8 @@ def kafka_listener():
             if consumer:
                 try:
                     consumer.close()
-                except:
-                    pass
+                except Exception as e:
+                    logger.warning("Error closing Kafka consumer: %s", e)
 
 @app.on_event("startup")
 async def startup_event():

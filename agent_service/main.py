@@ -10,7 +10,7 @@ load_dotenv()
 
 INGESTION_URL = os.getenv("INGESTION_URL", "http://localhost:8001")
 AGENT_TOKEN = os.getenv("AGENT_TOKEN", "")
-INTERVAL = int(os.getenv("INTERVAL", "5"))
+COLLECTION_INTERVAL = int(os.getenv("COLLECTION_INTERVAL", os.getenv("INTERVAL", "5")))
 
 # Ensure URL has /ingest endpoint
 if not INGESTION_URL.endswith("/ingest"):
@@ -24,7 +24,7 @@ def main():
         sys.exit(1)
     
     print(f"Starting Agent...")
-    print(f"Sending metrics to {INGESTION_URL} every {INTERVAL} seconds.")
+    print(f"Sending metrics to {INGESTION_URL} every {COLLECTION_INTERVAL} seconds.")
     
     headers = {
         "Content-Type": "application/json",
@@ -48,7 +48,7 @@ def main():
         except Exception as e:
             print(f"Error: {e}")
             
-        time.sleep(INTERVAL)
+        time.sleep(COLLECTION_INTERVAL)
 
 if __name__ == "__main__":
     main()
