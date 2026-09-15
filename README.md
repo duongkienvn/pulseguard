@@ -232,8 +232,8 @@ PulseGuard is a comprehensive system monitoring solution that collects, stores, 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/NFRohan/statusmonitor.git
-cd statusmonitor
+git clone https://github.com/duongkienvn/pulseguard.git
+cd pulseguard
 ```
 
 ### 2. Start All Services
